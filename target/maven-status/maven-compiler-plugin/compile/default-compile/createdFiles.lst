@@ -1,0 +1,4 @@
+fr/uvsq/client/Client.class
+fr/uvsq/server/ClientHandler.class
+fr/uvsq/server/Server.class
+fr/uvsq/core/CommandProcessor.class

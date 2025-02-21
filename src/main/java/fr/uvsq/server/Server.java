@@ -7,10 +7,6 @@ import java.net.ServerSocket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Serveur principal pour le contrôle à distance.
- * Gère les connexions entrantes et délègue chaque client à un ClientHandler.
- */
 public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     private static final int PORT = 5001;

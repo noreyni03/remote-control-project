@@ -3,32 +3,23 @@ package fr.uvsq.core;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Exécute les commandes système et capture leur sortie.
- */
 public class CommandProcessor {
     private static final Logger logger = LoggerFactory.getLogger(CommandProcessor.class);
 
-    /**
-     * Exécute une commande système et retourne sa sortie.
-     *
-     * @param command La commande à exécuter.
-     * @return La sortie de la commande.
-     */
     public String executeCommand(String command) {
         try {
-            ProcessBuilder processBuilder = new ProcessBuilder();
+            ProcessBuilder pb = new ProcessBuilder();
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
-                processBuilder.command("cmd.exe", "/c", command);
+                pb.command("cmd.exe", "/c", command);
             } else {
-                processBuilder.command("sh", "-c", command);
+                pb.command("sh", "-c", command);
             }
 
-            Process process = processBuilder.start();
+            Process process = pb.start();
             boolean finished = process.waitFor(5, TimeUnit.SECONDS);
 
             if (!finished) {
@@ -43,10 +34,10 @@ public class CommandProcessor {
         }
     }
 
-    private String readOutput(Process process) throws Exception {
+    private String readOutput(Process process) throws IOException {
         StringBuilder output = new StringBuilder();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8));
+             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
 
             String line;
             while ((line = reader.readLine()) != null) output.append(line).append("\n");

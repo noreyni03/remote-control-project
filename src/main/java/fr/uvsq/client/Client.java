@@ -3,15 +3,11 @@ package fr.uvsq.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
-/**
- * Client pour interagir avec le serveur de contrôle à distance.
- */
 public class Client {
     private static final Logger logger = LoggerFactory.getLogger(Client.class);
     private static final String END_MARKER = "###END###";
@@ -20,9 +16,9 @@ public class Client {
         logger.info("🚀 Starting client...");
 
         try (Socket socket = new Socket("localhost", 5001);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             Scanner scanner = new Scanner(System.in)) {
+             PrintWriter out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+             Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.name())) {
 
             logger.info("🔗 Connected to server. Enter commands (type 'exit' to quit):");
 
@@ -43,7 +39,7 @@ public class Client {
         }
     }
 
-    private static String readResponse(BufferedReader in) throws Exception {
+    private static String readResponse(BufferedReader in) throws IOException {
         StringBuilder response = new StringBuilder();
         String line;
         while ((line = in.readLine()) != null && !line.equals(END_MARKER)) {

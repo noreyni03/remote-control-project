@@ -1,11 +1,21 @@
 package fr.uvsq.server;
 
 import fr.uvsq.core.CommandProcessor;
-import java.io.*;
-import java.net.Socket;
-import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+/**
+ * Gère la communication avec un client connecté.
+ */
 public class ClientHandler implements Runnable {
+    private static final Logger logger = LoggerFactory.getLogger(ClientHandler.class);
+    private static final String END_MARKER = "###END###";
+
     private final Socket clientSocket;
     private final CommandProcessor processor = new CommandProcessor();
 
@@ -17,15 +27,21 @@ public class ClientHandler implements Runnable {
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
              PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true)) {
-            
+
+            String clientId = clientSocket.getInetAddress() + ":" + clientSocket.getPort();
+            logger.info("📩 Handling client: {}", clientId);
+
             String command;
             while ((command = in.readLine()) != null) {
+                logger.debug("Received command: {}", command);
                 String response = processor.executeCommand(command);
                 out.println(response);
-                out.println("###END###");
+                out.println(END_MARKER);
             }
         } catch (Exception e) {
-            System.err.println("Client error: " + e.getMessage());
+            logger.warn("⚠️ Client connection error: {}", e.getMessage(), e);
+        } finally {
+            logger.info("🔌 Client disconnected");
         }
     }
 }

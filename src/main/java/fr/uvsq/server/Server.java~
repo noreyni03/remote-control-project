@@ -1,0 +1,37 @@
+package fr.uvsq.server;
+
+import java.net.ServerSocket;
+import java.net.InetAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class Server {
+    private static final int PORT = 5001;
+    private static final int MAX_CLIENTS = 10;
+
+    public static void main(String[] args) {
+        ExecutorService threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
+
+        try (ServerSocket serverSocket = new ServerSocket(PORT, 50, InetAddress.getByName("0.0.0.0"))) {
+            System.out.println("🚀 Server started on port " + PORT);
+            System.out.println("Listening on address: " + serverSocket.getInetAddress().getHostAddress());
+            System.out.println("Local port: " + serverSocket.getLocalPort());
+
+            while (true) {
+                try {
+                    System.out.println("Waiting for client connection...");
+                    var clientSocket = serverSocket.accept();
+                    System.out.println("New client connected: " + clientSocket.getInetAddress().getHostAddress());
+                    threadPool.execute(new ClientHandler(clientSocket));
+                } catch (Exception e) {
+                    System.err.println("Error accepting client connection: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Server failed to start: " + e.getMessage());
+            e.printStackTrace();
+            threadPool.shutdown();
+        }
+    }
+}

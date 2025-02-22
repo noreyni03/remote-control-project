@@ -1,0 +1,37 @@
+/* styles/main.css */
+.root {
+    -fx-base: #3A3A3A;
+    -fx-background: #2D2D2D;
+}
+
+.action-btn {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-padding: 8 15;
+    -fx-background-radius: 5;
+}
+
+.secondary-btn {
+    -fx-background-color: #607D8B;
+    -fx-text-fill: white;
+    -fx-padding: 8 15;
+    -fx-background-radius: 5;
+}
+
+.text-field {
+    -fx-background-radius: 5;
+    -fx-padding: 8;
+}
+
+.list-view {
+    -fx-background-color: derive(-fx-base, 10%);
+    -fx-border-color: derive(-fx-base, 20%);
+    -fx-border-radius: 5;
+}
+
+.text-area {
+    -fx-control-inner-background: #1E1E1E;
+    -fx-text-fill: #FFFFFF;
+    -fx-font-family: 'Consolas';
+    -fx-font-size: 14px;
+}

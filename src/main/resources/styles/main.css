@@ -1,37 +1,80 @@
-/* styles/main.css */
+/*
+  Ce fichier CSS définit le style de l'application d'interface graphique (GUI).
+  Il utilise des variables et des sélecteurs pour personnaliser l'apparence
+  des différents éléments de l'interface utilisateur.
+*/
+
 .root {
-    -fx-base: #3A3A3A;
-    -fx-background: #2D2D2D;
+    /*
+      Définit la couleur de base et la couleur de fond de l'application.
+      -fx-base : Couleur de base, souvent utilisée pour dériver d'autres couleurs.
+      -fx-background : Couleur de fond principale de l'application.
+    */
+    -fx-base: #3A3A3A; /* Gris moyen */
+    -fx-background: #2D2D2D; /* Gris foncé */
 }
 
 .action-btn {
-    -fx-background-color: #4CAF50;
-    -fx-text-fill: white;
-    -fx-padding: 8 15;
-    -fx-background-radius: 5;
+    /*
+      Style pour les boutons d'action principaux (ex: "Connect", "Execute").
+      -fx-background-color : Couleur de fond du bouton.
+      -fx-text-fill : Couleur du texte du bouton.
+      -fx-padding : Espacement interne (haut/bas, gauche/droite).
+      -fx-background-radius : Rayon de l'arrondi des coins du bouton.
+    */
+    -fx-background-color: #4CAF50; /* Vert */
+    -fx-text-fill: white; /* Blanc */
+    -fx-padding: 8 15; /* 8px haut/bas, 15px gauche/droite */
+    -fx-background-radius: 5; /* Coins arrondis de 5px */
 }
 
 .secondary-btn {
-    -fx-background-color: #607D8B;
-    -fx-text-fill: white;
-    -fx-padding: 8 15;
-    -fx-background-radius: 5;
+    /*
+      Style pour les boutons secondaires (ex: "Clear").
+      Similaire à .action-btn, mais avec une couleur différente.
+    */
+    -fx-background-color: #607D8B; /* Gris bleu */
+    -fx-text-fill: white; /* Blanc */
+    -fx-padding: 8 15; /* 8px haut/bas, 15px gauche/droite */
+    -fx-background-radius: 5; /* Coins arrondis de 5px */
 }
 
 .text-field {
-    -fx-background-radius: 5;
-    -fx-padding: 8;
+    /*
+      Style pour les champs de texte.
+      -fx-background-radius : Rayon de l'arrondi des coins du champ de texte.
+      -fx-padding : Espacement interne du champ de texte.
+    */
+    -fx-background-radius: 5; /* Coins arrondis de 5px */
+    -fx-padding: 8; /* Espacement interne de 8px */
 }
 
 .list-view {
-    -fx-background-color: derive(-fx-base, 10%);
-    -fx-border-color: derive(-fx-base, 20%);
-    -fx-border-radius: 5;
+    /*
+      Style pour les listes d'éléments (ex: historique des commandes, liste des clients).
+      -fx-background-color : Couleur de fond de la liste. `derive(-fx-base, 10%)` signifie
+                             que la couleur est dérivée de la couleur de base (-fx-base)
+                             en l'éclaircissant de 10%.
+      -fx-border-color : Couleur de la bordure de la liste. `derive(-fx-base, 20%)`
+                         signifie que la couleur est dérivée de la couleur de base
+                         en l'éclaircissant de 20%.
+      -fx-border-radius : Rayon de l'arrondi des coins de la bordure de la liste.
+    */
+    -fx-background-color: derive(-fx-base, 10%); /* Gris clair, dérivé de -fx-base */
+    -fx-border-color: derive(-fx-base, 20%); /* Gris encore plus clair, dérivé de -fx-base */
+    -fx-border-radius: 5; /* Coins arrondis de 5px */
 }
 
 .text-area {
-    -fx-control-inner-background: #1E1E1E;
-    -fx-text-fill: #FFFFFF;
-    -fx-font-family: 'Consolas';
-    -fx-font-size: 14px;
+    /*
+      Style pour les zones de texte multi-lignes (ex: zone de log, zone de sortie).
+      -fx-control-inner-background : Couleur de fond de la zone de texte.
+      -fx-text-fill : Couleur du texte.
+      -fx-font-family : Police de caractères.
+      -fx-font-size : Taille de la police.
+    */
+    -fx-control-inner-background: #1E1E1E; /* Gris très foncé */
+    -fx-text-fill: #FFFFFF; /* Blanc */
+    -fx-font-family: 'Consolas'; /* Police à chasse fixe pour une meilleure lisibilité des sorties de commandes */
+    -fx-font-size: 14px; /* Taille de la police 14px */
 }

@@ -4,47 +4,76 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+/**
+ * La classe `Client` représente un client capable de se connecter à un serveur,
+ * d'envoyer des commandes et de recevoir des réponses.
+ */
 public class Client {
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
+    private static final String END_MARKER = "###END###";
 
+    /**
+     * Constructeur de la classe `Client`.
+     * Tente d'établir une connexion avec un serveur à l'hôte et au port spécifiés.
+     *
+     * @param host L'adresse IP ou le nom d'hôte du serveur.
+     * @param port Le numéro de port sur lequel le serveur écoute.
+     * @throws IOException Si une erreur d'entrée/sortie se produit lors de la connexion.
+     */
     public Client(String host, int port) throws IOException {
-        connect(host, port);
+        System.out.println("[Client] Tentative de connexion à " + host + ":" + port);
+        try {
+            socket = new Socket(host, port);
+            out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+            System.out.println("[Client] Connexion réussie !");
+        } catch (IOException e) {
+            System.err.println("[Client] Erreur de connexion : " + e.getMessage());
+            throw new IOException("Impossible de se connecter au serveur à " + host + ":" + port, e);
+        }
     }
 
-    private void connect(String host, int port) throws IOException {
-        socket = new Socket(host, port);
-        out = new PrintWriter(
-                new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8),
-                true
-        );
-        in = new BufferedReader(
-                new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)
-        );
-    }
-
+    /**
+     * Envoie une commande au serveur et attend une réponse.
+     *
+     * @param command La commande à envoyer au serveur.
+     * @return La réponse du serveur à la commande.
+     * @throws IOException Si une erreur d'entrée/sortie se produit lors de l'envoi ou de la réception.
+     */
     public String sendCommand(String command) throws IOException {
-        out.println(command);
-        return readResponse();
-    }
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Connexion au serveur perdue.");
+        }
 
-    private String readResponse() throws IOException {
+        System.out.println("[Client] Envoi de la commande : " + command);
+        out.println(command);
+
         StringBuilder response = new StringBuilder();
         String line;
-        while ((line = in.readLine()) != null && !line.equals("###END###")) {
+        // Lit la réponse du serveur ligne par ligne jusqu'à recevoir le marqueur de fin.
+        while ((line = in.readLine()) != null) {
+            if (line.equals(END_MARKER)) {
+                break;
+            }
             response.append(line).append("\n");
         }
+        System.out.println("[Client] Réponse reçue : " + response.toString().trim());
         return response.toString().trim();
     }
 
+    /**
+     * Déconnecte le client du serveur en fermant le socket.
+     */
     public void disconnect() {
         try {
-            if (socket != null) socket.close();
-            if (out != null) out.close();
-            if (in != null) in.close();
+            if (socket != null && !socket.isClosed()) {
+                System.out.println("[Client] Déconnexion du serveur...");
+                socket.close();
+            }
         } catch (IOException e) {
-            System.err.println("Error closing connection: " + e.getMessage());
+            System.err.println("[Client] Erreur lors de la fermeture du socket : " + e.getMessage());
         }
     }
 }

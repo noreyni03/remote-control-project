@@ -9,52 +9,57 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.SplitPane;  // Correction de l'import
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+/**
+ * La classe `ClientGUI` représente l'interface graphique du client pour le système de contrôle à distance.
+ * Elle permet à l'utilisateur de se connecter à un serveur, d'exécuter des commandes et de voir l'historique et la sortie des commandes.
+ */
 public class ClientGUI extends Application {
     private TextArea outputArea;
     private TextField commandField;
     private ListView<String> historyList;
     private Client client;
     private boolean isConnected = false;
+    private String serverIP = "127.0.0.1"; // Modifier si besoin (ex. IP WSL)
 
+    /**
+     * Méthode principale pour démarrer l'application JavaFX.
+     *
+     * @param primaryStage La fenêtre principale de l'application.
+     */
     @Override
     public void start(Stage primaryStage) {
-        // Configuration de la fenêtre principale
         primaryStage.setTitle("Remote Control Pro - v1.0");
         primaryStage.setMinWidth(800);
         primaryStage.setMinHeight(600);
 
-        // Layout principal
         BorderPane root = new BorderPane();
         root.getStylesheets().add(getClass().getResource("/styles/main.css").toExternalForm());
 
-        // Header
-        HBox header = createHeader();
-        root.setTop(header);
+        root.setTop(createHeader());
+        root.setCenter(createMainContent());
+        root.setBottom(createFooter());
 
-        // Corps principal
-        SplitPane mainContent = createMainContent();
-        root.setCenter(mainContent);
-
-        // Footer
-        HBox footer = createFooter();
-        root.setBottom(footer);
-
-        // Configuration de la scène
         Scene scene = new Scene(root);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
+    /**
+     * Crée l'en-tête de l'application.
+     * L'en-tête contient le titre de l'application et un bouton pour se connecter/déconnecter du serveur.
+     *
+     * @return Un objet HBox représentant l'en-tête.
+     */
     private HBox createHeader() {
         HBox header = new HBox(10);
         header.setPadding(new Insets(15));
@@ -72,6 +77,12 @@ public class ClientGUI extends Application {
         return header;
     }
 
+    /**
+     * Crée le contenu principal de l'application.
+     * Le contenu principal est divisé en deux parties : l'historique des commandes et la zone de sortie.
+     *
+     * @return Un objet SplitPane contenant l'historique et la zone de sortie.
+     */
     private SplitPane createMainContent() {
         SplitPane splitPane = new SplitPane();
 
@@ -84,24 +95,28 @@ public class ClientGUI extends Application {
         historyList = new ListView<>();
         historyList.setPlaceholder(new Label("No commands executed yet"));
         VBox.setVgrow(historyList, Priority.ALWAYS);
-
         historyPane.getChildren().addAll(historyLabel, historyList);
 
         // Zone de sortie
         VBox outputPane = new VBox(10);
         outputPane.setPadding(new Insets(10));
-
         outputArea = new TextArea();
         outputArea.setEditable(false);
         outputArea.setWrapText(true);
         VBox.setVgrow(outputArea, Priority.ALWAYS);
-
         outputPane.getChildren().add(outputArea);
 
+        // Ajout des deux panneaux dans le SplitPane
         splitPane.getItems().addAll(historyPane, outputPane);
         return splitPane;
     }
 
+    /**
+     * Crée le pied de page de l'application.
+     * Le pied de page contient un champ de texte pour entrer des commandes, un bouton pour exécuter la commande et un bouton pour effacer la sortie.
+     *
+     * @return Un objet HBox représentant le pied de page.
+     */
     private HBox createFooter() {
         HBox footer = new HBox(10);
         footer.setPadding(new Insets(10));
@@ -125,15 +140,22 @@ public class ClientGUI extends Application {
         return footer;
     }
 
+    /**
+     * Gère l'action de connexion/déconnexion du serveur.
+     *
+     * @param btn Le bouton "Connecter/Déconnecter" qui a été cliqué.
+     */
     private void toggleConnection(ToggleButton btn) {
         if (btn.isSelected()) {
             try {
-                client = new Client("localhost", 5001);
+                System.out.println("[ClientGUI] Tentative de connexion à " + serverIP + ":5001");
+                client = new Client(serverIP, 5001);
                 isConnected = true;
                 btn.setText("Disconnect");
-                outputArea.appendText("Connected to server\n");
+                outputArea.appendText("✅ Connecté au serveur\n");
             } catch (Exception e) {
-                showErrorDialog("Connection Error", e.getMessage());
+                e.printStackTrace();
+                showErrorDialog("Erreur de connexion", e.getMessage());
                 btn.setSelected(false);
             }
         } else {
@@ -142,29 +164,38 @@ public class ClientGUI extends Application {
             }
             isConnected = false;
             btn.setText("Connect");
-            outputArea.appendText("Disconnected from server\n");
+            outputArea.appendText("❌ Déconnecté du serveur\n");
         }
     }
 
+    /**
+     * Exécute la commande entrée par l'utilisateur.
+     * Envoie la commande au serveur et affiche la réponse dans la zone de sortie.
+     */
     private void executeCommand() {
         if (!isConnected) {
-            showErrorDialog("Connection Error", "Not connected to server!");
+            showErrorDialog("Erreur", "Pas connecté au serveur !");
             return;
         }
-
         String command = commandField.getText().trim();
         if (command.isEmpty()) return;
-
         try {
+            System.out.println("[ClientGUI] Envoi de la commande : " + command);
             String response = client.sendCommand(command);
             historyList.getItems().add(command);
             outputArea.appendText("$ " + command + "\n" + response + "\n\n");
             commandField.clear();
         } catch (Exception e) {
-            showErrorDialog("Execution Error", e.getMessage());
+            showErrorDialog("Erreur d'exécution", e.getMessage());
         }
     }
 
+    /**
+     * Affiche une boîte de dialogue d'erreur.
+     *
+     * @param title   Le titre de la boîte de dialogue.
+     * @param message Le message d'erreur à afficher.
+     */
     private void showErrorDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
@@ -173,6 +204,11 @@ public class ClientGUI extends Application {
         alert.showAndWait();
     }
 
+    /**
+     * Méthode principale pour lancer l'application.
+     *
+     * @param args Les arguments de la ligne de commande.
+     */
     public static void main(String[] args) {
         launch(args);
     }

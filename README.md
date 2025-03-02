@@ -26,10 +26,9 @@ Voici les étapes pour exécuter le projet :
 
 1.  **Cloner le dépôt:**
     ```bash
-    git clone [URL_DU_REPO_GITHUB]
+    git clone https://github.com/noreyni03/remote-control-project.git
     cd remote-control-project
     ```
-    Remplacez `[URL_DU_REPO_GITHUB]` par l'URL de votre dépôt GitHub.
 
 2.  **Compiler le projet avec Maven:**
     Ouvrez un terminal et naviguez vers le répertoire racine du projet (`remote-control-project`). Exécutez la commande suivante :

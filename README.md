@@ -46,7 +46,7 @@ Voici les étapes pour exécuter le projet :
     *   **Méthode 2 : Via le fichier JAR (pour une exécution autonome)**
         Naviguez vers le répertoire `target` du module `server` :
         ```bash
-        cd server/target
+        cd target
         ```
         Puis, exécutez la commande suivante :
         ```bash

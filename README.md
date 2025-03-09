@@ -69,7 +69,7 @@ Voici les étapes pour exécuter le projet :
         ```bash
         java -jar [NOM_DU_FICHIER_JAR_CLIENT].jar
         ```
-        Remplacez `[NOM_DU_FICHIER_JAR_CLIENT]` par le nom du fichier JAR du client (il se trouve dans le dossier `client/target` et son nom commencera par `client-`).
+        Remplacez `[NOM_DU_FICHIER_JAR_CLIENT]` par le nom du fichier JAR du client (il se trouve dans le dossier `target` et son nom commencera par `client-`).
 
 5.  **Utiliser l'application:**
     *   **Serveur:** L'interface graphique du serveur affichera les logs et la liste des clients connectés.

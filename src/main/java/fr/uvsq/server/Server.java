@@ -1,6 +1,7 @@
 package fr.uvsq.server;
 
-import java.net.ServerSocket;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,8 +37,14 @@ public class Server {
         final int MAX_CLIENTS = 10;
         threadPool = Executors.newFixedThreadPool(MAX_CLIENTS);
 
-        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
-            logCallback.accept("✅ Server listening on port " + PORT);
+        try {
+            System.setProperty("javax.net.ssl.keyStore", "server_keystore.jks");
+            System.setProperty("javax.net.ssl.keyStorePassword", "password");
+
+            SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+            SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(PORT);
+
+            logCallback.accept("✅ Server listening on port " + PORT + " with SSL");
             while (running) {
                 Socket socket = serverSocket.accept();
                 String clientInfo = socket.getInetAddress() + ":" + socket.getPort();
@@ -56,6 +63,7 @@ public class Server {
                     }
                 });
             }
+            serverSocket.close();
         } catch (Exception e) {
             logCallback.accept("❌ Server error: " + e.getMessage());
         }

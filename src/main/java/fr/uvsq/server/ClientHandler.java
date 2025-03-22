@@ -1,6 +1,7 @@
 package fr.uvsq.server;
 
 import fr.uvsq.core.CommandProcessor;
+import fr.uvsq.core.AuthManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,7 @@ public class ClientHandler implements Runnable {
 
     private final Socket clientSocket;
     private final CommandProcessor processor = new CommandProcessor();
+    private final AuthManager authManager = new AuthManager(); // Ajout de l'AuthManager
     private final Consumer<String> logCallback;
 
     /**
@@ -45,6 +47,7 @@ public class ClientHandler implements Runnable {
      * Gère la communication avec le client :
      * - Établit les flux d'entrée/sortie pour la communication.
      * - Récupère l'identifiant du client (adresse IP et port).
+     * - Vérifie l'authentification avant de traiter les commandes.
      * - Boucle pour lire les commandes envoyées par le client.
      * - Exécute les commandes via le `CommandProcessor`.
      * - Envoie la réponse au client, suivie du marqueur de fin `END_MARKER`.
@@ -59,6 +62,25 @@ public class ClientHandler implements Runnable {
 
             String clientId = clientSocket.getInetAddress() + ":" + clientSocket.getPort();
             logCallback.accept("📩 Handling client: " + clientId);
+
+            // Vérification de l'authentification
+            String authSignal = in.readLine();
+            if (!"AUTH".equals(authSignal)) {
+                logCallback.accept("⚠️ Client " + clientId + " n'a pas envoyé AUTH.");
+                out.println("ERROR: Authentification requise.");
+                return; // Ferme la connexion si AUTH n'est pas envoyé
+            }
+
+            String login = in.readLine();
+            String password = in.readLine();
+            if (authManager.authenticate(login, password)) {
+                logCallback.accept("✅ Client " + clientId + " authentifié avec succès.");
+                out.println("OK"); // Envoie "OK" pour confirmer l'authentification
+            } else {
+                logCallback.accept("❌ Échec de l'authentification pour " + clientId);
+                out.println("ERROR: Identifiants incorrects.");
+                return; // Ferme la connexion si les identifiants sont faux
+            }
 
             String command;
             // Lecture des commandes envoyées par le client jusqu'à ce que la connexion soit coupée.

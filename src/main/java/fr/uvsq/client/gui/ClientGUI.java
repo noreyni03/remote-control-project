@@ -30,6 +30,8 @@ public class ClientGUI extends Application {
     private Client client;
     private boolean isConnected = false;
     private String serverIP = "127.0.0.1"; // Modifier si besoin (ex. IP WSL)
+    private TextField loginField; // Champ pour le login
+    private TextField passwordField; // Champ pour le mot de passe
 
     /**
      * Méthode principale pour démarrer l'application JavaFX.
@@ -56,7 +58,7 @@ public class ClientGUI extends Application {
 
     /**
      * Crée l'en-tête de l'application.
-     * L'en-tête contient le titre de l'application et un bouton pour se connecter/déconnecter du serveur.
+     * L'en-tête contient le titre de l'application, les champs login/mot de passe et un bouton pour se connecter/déconnecter du serveur.
      *
      * @return Un objet HBox représentant l'en-tête.
      */
@@ -69,11 +71,24 @@ public class ClientGUI extends Application {
         Label title = new Label("Remote Control Pro");
         title.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-font-weight: bold;");
 
+        // Ajout des champs login et mot de passe
+        Label loginLabel = new Label("Login:");
+        loginLabel.setStyle("-fx-text-fill: #FFFFFF;");
+        loginField = new TextField();
+        loginField.setPromptText("Entrez votre login");
+        loginField.setPrefWidth(120);
+
+        Label passwordLabel = new Label("Mot de passe:");
+        passwordLabel.setStyle("-fx-text-fill: #FFFFFF;");
+        passwordField = new TextField();
+        passwordField.setPromptText("Entrez votre mot de passe");
+        passwordField.setPrefWidth(120);
+
         ToggleButton connectionBtn = new ToggleButton("Connect");
         connectionBtn.getStyleClass().add("action-btn");
         connectionBtn.setOnAction(e -> toggleConnection(connectionBtn));
 
-        header.getChildren().addAll(title, connectionBtn);
+        header.getChildren().addAll(title, loginLabel, loginField, passwordLabel, passwordField, connectionBtn);
         return header;
     }
 
@@ -150,9 +165,18 @@ public class ClientGUI extends Application {
             try {
                 System.out.println("[ClientGUI] Tentative de connexion à " + serverIP + ":5001");
                 client = new Client(serverIP, 5001);
-                isConnected = true;
-                btn.setText("Disconnect");
-                outputArea.appendText("✅ Connecté au serveur\n");
+                // Authentification avec le login et mot de passe entrés
+                String login = loginField.getText().trim();
+                String password = passwordField.getText().trim();
+                if (client.authenticate(login, password)) {
+                    isConnected = true;
+                    btn.setText("Disconnect");
+                    outputArea.appendText("✅ Connecté au serveur\n");
+                } else {
+                    client.disconnect();
+                    showErrorDialog("Erreur d'authentification", "Login ou mot de passe incorrect.");
+                    btn.setSelected(false);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 showErrorDialog("Erreur de connexion", e.getMessage());

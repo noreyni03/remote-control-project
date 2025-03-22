@@ -36,6 +36,31 @@ public class Client {
     }
 
     /**
+     * Envoie les identifiants au serveur pour s'authentifier.
+     *
+     * @param login Le login de l'utilisateur.
+     * @param password Le mot de passe de l'utilisateur.
+     * @return true si l'authentification réussit, false sinon.
+     * @throws IOException Si une erreur d'entrée/sortie se produit.
+     */
+    public boolean authenticate(String login, String password) throws IOException {
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Connexion au serveur perdue.");
+        }
+
+        // Envoie le login et le mot de passe au serveur
+        System.out.println("[Client] Envoi des identifiants : " + login);
+        out.println("AUTH"); // Indique au serveur qu'on envoie une authentification
+        out.println(login);  // Envoie le login
+        out.println(password); // Envoie le mot de passe
+
+        // Lit la réponse du serveur
+        String response = in.readLine();
+        System.out.println("[Client] Réponse d'authentification : " + response);
+        return "OK".equals(response); // Si le serveur répond "OK", c'est réussi
+    }
+
+    /**
      * Envoie une commande au serveur et attend une réponse.
      *
      * @param command La commande à envoyer au serveur.

@@ -1,80 +1,215 @@
-/*
-  Ce fichier CSS définit le style de l'application d'interface graphique (GUI).
-  Il utilise des variables et des sélecteurs pour personnaliser l'apparence
-  des différents éléments de l'interface utilisateur.
-*/
-
 .root {
-    /*
-      Définit la couleur de base et la couleur de fond de l'application.
-      -fx-base : Couleur de base, souvent utilisée pour dériver d'autres couleurs.
-      -fx-background : Couleur de fond principale de l'application.
-    */
-    -fx-base: #3A3A3A; /* Gris moyen */
-    -fx-background: #2D2D2D; /* Gris foncé */
+    -fx-background-color: #1e2124;
+    -fx-font-family: "Segoe UI", sans-serif;
 }
 
-.action-btn {
-    /*
-      Style pour les boutons d'action principaux (ex: "Connect", "Execute").
-      -fx-background-color : Couleur de fond du bouton.
-      -fx-text-fill : Couleur du texte du bouton.
-      -fx-padding : Espacement interne (haut/bas, gauche/droite).
-      -fx-background-radius : Rayon de l'arrondi des coins du bouton.
-    */
-    -fx-background-color: #4CAF50; /* Vert */
-    -fx-text-fill: white; /* Blanc */
-    -fx-padding: 8 15; /* 8px haut/bas, 15px gauche/droite */
-    -fx-background-radius: 5; /* Coins arrondis de 5px */
+.header {
+    -fx-background-color: linear-gradient(to bottom, #2a2d32, #1e2124);
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 15, 0, 0, 3);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
 }
 
-.secondary-btn {
-    /*
-      Style pour les boutons secondaires (ex: "Clear").
-      Similaire à .action-btn, mais avec une couleur différente.
-    */
-    -fx-background-color: #607D8B; /* Gris bleu */
-    -fx-text-fill: white; /* Blanc */
-    -fx-padding: 8 15; /* 8px haut/bas, 15px gauche/droite */
-    -fx-background-radius: 5; /* Coins arrondis de 5px */
+.title {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
 }
 
-.text-field {
-    /*
-      Style pour les champs de texte.
-      -fx-background-radius : Rayon de l'arrondi des coins du champ de texte.
-      -fx-padding : Espacement interne du champ de texte.
-    */
-    -fx-background-radius: 5; /* Coins arrondis de 5px */
-    -fx-padding: 8; /* Espacement interne de 8px */
+.label {
+    -fx-text-fill: #b0b8c4;
+    -fx-font-size: 16px;
+    -fx-font-weight: 500;
 }
 
-.list-view {
-    /*
-      Style pour les listes d'éléments (ex: historique des commandes, liste des clients).
-      -fx-background-color : Couleur de fond de la liste. `derive(-fx-base, 10%)` signifie
-                             que la couleur est dérivée de la couleur de base (-fx-base)
-                             en l'éclaircissant de 10%.
-      -fx-border-color : Couleur de la bordure de la liste. `derive(-fx-base, 20%)`
-                         signifie que la couleur est dérivée de la couleur de base
-                         en l'éclaircissant de 20%.
-      -fx-border-radius : Rayon de l'arrondi des coins de la bordure de la liste.
-    */
-    -fx-background-color: derive(-fx-base, 10%); /* Gris clair, dérivé de -fx-base */
-    -fx-border-color: derive(-fx-base, 20%); /* Gris encore plus clair, dérivé de -fx-base */
-    -fx-border-radius: 5; /* Coins arrondis de 5px */
+.input-field {
+    -fx-background-color: #2c2f33;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #6b7280;
+    -fx-background-radius: 10;
+    -fx-padding: 8;
+    -fx-pref-width: 200;
+    -fx-pref-height: 35px;
+    -fx-border-color: #3b4046;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+    -fx-transition: all 0.3s ease;
+    -fx-font-size: 15px;
 }
 
-.text-area {
-    /*
-      Style pour les zones de texte multi-lignes (ex: zone de log, zone de sortie).
-      -fx-control-inner-background : Couleur de fond de la zone de texte.
-      -fx-text-fill : Couleur du texte.
-      -fx-font-family : Police de caractères.
-      -fx-font-size : Taille de la police.
-    */
-    -fx-control-inner-background: #1E1E1E; /* Gris très foncé */
-    -fx-text-fill: #FFFFFF; /* Blanc */
-    -fx-font-family: 'Consolas'; /* Police à chasse fixe pour une meilleure lisibilité des sorties de commandes */
-    -fx-font-size: 14px; /* Taille de la police 14px */
+.input-field:focused {
+    -fx-border-color: #7289da;
+    -fx-effect: dropshadow(gaussian, rgba(114,137,218,0.5), 10, 0, 0, 2);
+}
+
+.command-field {
+    -fx-font-size: 16px;
+    -fx-pref-height: 40px;
+    -fx-background-color: #2c2f33;
+    -fx-text-fill: #ffffff;
+    -fx-prompt-text-fill: #6b7280;
+    -fx-background-radius: 10;
+    -fx-padding: 8;
+    -fx-border-color: #3b4046;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+}
+
+.command-field:focused {
+    -fx-border-color: #7289da;
+    -fx-effect: dropshadow(gaussian, rgba(114,137,218,0.5), 10, 0, 0, 2);
+}
+
+.connect-btn {
+    -fx-background-color: #7289da;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 25;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 3);
+    -fx-transition: all 0.3s ease;
+}
+
+.connect-btn:hover {
+    -fx-background-color: #5b6eae;
+    -fx-effect: dropshadow(gaussian, rgba(91,110,174,0.7), 12, 0, 0, 3);
+}
+
+.disconnect-btn {
+    -fx-background-color: #ff5555;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 25;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 3);
+    -fx-transition: all 0.3s ease;
+}
+
+.disconnect-btn:hover {
+    -fx-background-color: #e64a4a;
+    -fx-effect: dropshadow(gaussian, rgba(230,74,74,0.7), 12, 0, 0, 3);
+}
+
+.execute-btn {
+    -fx-background-color: #43b581;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 30;  /* Légère augmentation du padding pour l'icône */
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 3);
+    -fx-transition: all 0.3s ease;
+}
+
+.execute-btn:hover {
+    -fx-background-color: #3a9d70;
+    -fx-effect: dropshadow(gaussian, rgba(67,181,129,0.7), 12, 0, 0, 3);
+}
+
+.upload-btn {
+    -fx-background-color: #7289da;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 30;  /* Légère augmentation du padding pour l'icône */
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 3);
+    -fx-transition: all 0.3s ease;
+}
+
+.upload-btn:hover {
+    -fx-background-color: #5b6eae;
+    -fx-effect: dropshadow(gaussian, rgba(91,110,174,0.7), 12, 0, 0, 3);
+}
+
+.download-btn {
+    -fx-background-color: #f47c3c;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 30;  /* Légère augmentation du padding pour l'icône */
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 3);
+    -fx-transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+    -fx-background-color: #d66b32;
+    -fx-effect: dropshadow(gaussian, rgba(214,107,50,0.7), 12, 0, 0, 3);
+}
+
+.clear-btn {
+    -fx-background-color: #ff5555;
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 10 30;  /* Légère augmentation du padding pour l'icône */
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 8, 0, 0, 3);
+    -fx-transition: all 0.3s ease;
+}
+
+.clear-btn:hover {
+    -fx-background-color: #e64a4a;
+    -fx-effect: dropshadow(gaussian, rgba(230,74,74,0.7), 12, 0, 0, 3);
+}
+
+.toggle-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #b0b8c4;
+    -fx-font-size: 16px;
+    -fx-padding: 5;
+    -fx-transition: all 0.3s ease;
+}
+
+.toggle-btn:hover {
+    -fx-text-fill: #ffffff;
+    -fx-effect: dropshadow(gaussian, rgba(255,255,255,0.2), 5, 0, 0, 0);
+}
+
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 10;
+}
+
+.history-list {
+    -fx-background-color: #d3d3d3;
+    -fx-text-fill: #000000;
+    -fx-font-size: 16px;
+    -fx-background-radius: 10;
+    -fx-border-color: #3b4046;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+    -fx-pref-height: 315px;
+}
+
+.history-list .list-cell {
+    -fx-text-fill: #000000;
+    -fx-font-size: 16px;
+}
+
+.output-area {
+    -fx-background-color: #d3d3d3;
+    -fx-text-fill: #000000;
+    -fx-font-size: 16px;
+    -fx-background-radius: 10;
+    -fx-border-color: #3b4046;
+    -fx-border-width: 1;
+    -fx-border-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 5, 0, 0, 2);
+    -fx-pref-height: 315px;
+}
+
+.footer {
+    -fx-background-color: linear-gradient(to top, #2a2d32, #1e2124);
+    -fx-padding: 20;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.6), 15, 0, 0, -3);
+    -fx-border-radius: 10;
+    -fx-background-radius: 10;
 }

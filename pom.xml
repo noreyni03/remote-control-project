@@ -8,7 +8,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21</javafx.version> <!-- Mise à jour pour JDK 21 -->
+        <javafx.version>17.0.9</javafx.version>
         <slf4j.version>2.0.9</slf4j.version>
         <jfoenix.version>9.0.10</jfoenix.version>
     </properties>
@@ -61,7 +61,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <release>21</release> <!-- Mise à jour pour JDK 21 -->
+                    <release>17</release>
                 </configuration>
             </plugin>
 

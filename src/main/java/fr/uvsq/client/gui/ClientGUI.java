@@ -1,53 +1,45 @@
 package fr.uvsq.client.gui;
 
 import fr.uvsq.client.Client;
+import javafx.animation.ScaleTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.*;
+import javafx.scene.layout.*;
+import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+import javafx.scene.paint.Color;
+
 import java.io.File;
 import java.io.IOException;
-import javafx.scene.control.TextInputDialog;
 import java.util.Optional;
 
 /**
  * La classe `ClientGUI` représente l'interface graphique du client pour le système de contrôle à distance.
- * Elle permet à l'utilisateur de se connecter à un serveur, d'exécuter des commandes et de voir l'historique et la sortie des commandes.
+ * Elle permet à l'utilisateur de se connecter à un serveur, d'exécuter des commandes et de gérer des fichiers.
  */
 public class ClientGUI extends Application {
-    private TextArea outputArea;
+    private TextArea outputArea;  // Conserver TextArea
     private TextField commandField;
     private ListView<String> historyList;
     private Client client;
     private boolean isConnected = false;
-    private String serverIP = "127.0.0.1"; // Modifier si besoin (ex. IP WSL)
-    private TextField loginField; // Champ pour le login
-    private TextField passwordField; // Champ pour le mot de passe
+    private String serverIP = "127.0.0.1";
+    private TextField loginField;
+    private PasswordField passwordField;
+    private TextField passwordTextField;
+    private boolean isPasswordVisible = false;
+    private Button togglePasswordBtn;
 
-    /**
-     * Méthode principale pour démarrer l'application JavaFX.
-     *
-     * @param primaryStage La fenêtre principale de l'application.
-     */
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Remote Control Pro - v1.0");
         primaryStage.setMinWidth(800);
-        primaryStage.setMinHeight(600);
+        primaryStage.setMinHeight(722);
 
         BorderPane root = new BorderPane();
         root.getStylesheets().add(getClass().getResource("/styles/main.css").toExternalForm());
@@ -61,157 +53,220 @@ public class ClientGUI extends Application {
         primaryStage.show();
     }
 
-    /**
-     * Crée l'en-tête de l'application.
-     * L'en-tête contient le titre de l'application, les champs login/mot de passe et un bouton pour se connecter/déconnecter du serveur.
-     *
-     * @return Un objet HBox représentant l'en-tête.
-     */
-    private HBox createHeader() {
-        HBox header = new HBox(10);
-        header.setPadding(new Insets(15));
-        header.setAlignment(Pos.CENTER_LEFT);
-        header.setStyle("-fx-background-color: #2D2D2D;");
+    private VBox createHeader() {
+        VBox header = new VBox(15);
+        header.setPadding(new Insets(20));
+        header.getStyleClass().add("header");
 
+        HBox titleBox = new HBox(10);
         Label title = new Label("Remote Control Pro");
-        title.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-font-weight: bold;");
+        title.getStyleClass().add("title");
+        Circle statusIndicator = new Circle(8, Color.RED);
+        titleBox.getChildren().addAll(title, statusIndicator);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
 
-        // Ajout des champs login et mot de passe
+        GridPane connectionGrid = new GridPane();
+        connectionGrid.setHgap(15);
+        connectionGrid.setVgap(10);
+
         Label loginLabel = new Label("Login:");
-        loginLabel.setStyle("-fx-text-fill: #FFFFFF;");
+        loginLabel.getStyleClass().add("label");
         loginField = new TextField();
         loginField.setPromptText("Entrez votre login");
-        loginField.setPrefWidth(120);
+        loginField.getStyleClass().add("input-field");
 
         Label passwordLabel = new Label("Mot de passe:");
-        passwordLabel.setStyle("-fx-text-fill: #FFFFFF;");
-        passwordField = new TextField();
+        passwordLabel.getStyleClass().add("label");
+
+        passwordField = new PasswordField();
         passwordField.setPromptText("Entrez votre mot de passe");
-        passwordField.setPrefWidth(120);
+        passwordField.getStyleClass().add("input-field");
+        passwordTextField = new TextField();
+        passwordTextField.setPromptText("Entrez votre mot de passe");
+        passwordTextField.getStyleClass().add("input-field");
+        passwordTextField.setVisible(false);
+        passwordTextField.setManaged(false);
 
-        ToggleButton connectionBtn = new ToggleButton("Connect");
-        connectionBtn.getStyleClass().add("action-btn");
-        connectionBtn.setOnAction(e -> toggleConnection(connectionBtn));
+        togglePasswordBtn = new Button("👁️");
+        togglePasswordBtn.getStyleClass().add("toggle-btn");
+        togglePasswordBtn.setOnAction(e -> togglePasswordVisibility());
 
-        header.getChildren().addAll(title, loginLabel, loginField, passwordLabel, passwordField, connectionBtn);
+        StackPane passwordContainer = new StackPane();
+        passwordContainer.getChildren().addAll(passwordField, passwordTextField, togglePasswordBtn);
+        StackPane.setAlignment(togglePasswordBtn, Pos.CENTER_RIGHT);
+        StackPane.setMargin(togglePasswordBtn, new Insets(0, 10, 0, 0));
+        StackPane.setMargin(passwordField, new Insets(0, 35, 0, 0));
+        StackPane.setMargin(passwordTextField, new Insets(0, 35, 0, 0));
+
+        ToggleButton connectionBtn = new ToggleButton("Connecter");
+        connectionBtn.getStyleClass().add("connect-btn");
+        connectionBtn.setOnAction(e -> {
+            animateButton(connectionBtn);
+            toggleConnection(connectionBtn, statusIndicator);
+        });
+
+        connectionGrid.add(loginLabel, 0, 0);
+        connectionGrid.add(loginField, 1, 0);
+        connectionGrid.add(passwordLabel, 0, 1);
+        connectionGrid.add(passwordContainer, 1, 1);
+        connectionGrid.add(connectionBtn, 2, 0, 1, 2);
+
+        header.getChildren().addAll(titleBox, connectionGrid);
         return header;
     }
 
-    /**
-     * Crée le contenu principal de l'application.
-     * Le contenu principal est divisé en deux parties : l'historique des commandes et la zone de sortie.
-     *
-     * @return Un objet SplitPane contenant l'historique et la zone de sortie.
-     */
+    private void togglePasswordVisibility() {
+        if (isPasswordVisible) {
+            passwordField.setText(passwordTextField.getText());
+            passwordTextField.setVisible(false);
+            passwordTextField.setManaged(false);
+            passwordField.setVisible(true);
+            passwordField.setManaged(true);
+            togglePasswordBtn.setText("👁️");
+            isPasswordVisible = false;
+        } else {
+            passwordTextField.setText(passwordField.getText());
+            passwordField.setVisible(false);
+            passwordField.setManaged(false);
+            passwordTextField.setVisible(true);
+            passwordTextField.setManaged(true);
+            togglePasswordBtn.setText("👁️‍🗨️");
+            isPasswordVisible = true;
+        }
+    }
+
     private SplitPane createMainContent() {
         SplitPane splitPane = new SplitPane();
+        splitPane.getStyleClass().add("split-pane");
 
-        // Historique des commandes
         VBox historyPane = new VBox(10);
-        historyPane.setPadding(new Insets(10));
+        historyPane.setPadding(new Insets(15));
         historyPane.setMinWidth(250);
 
         Label historyLabel = new Label("Command History");
+        historyLabel.getStyleClass().add("label");
         historyList = new ListView<>();
         historyList.setPlaceholder(new Label("No commands executed yet"));
+        historyList.getStyleClass().add("history-list");
+        historyList.setPrefHeight(315);
         VBox.setVgrow(historyList, Priority.ALWAYS);
         historyPane.getChildren().addAll(historyLabel, historyList);
 
-        // Zone de sortie
         VBox outputPane = new VBox(10);
-        outputPane.setPadding(new Insets(10));
-        outputArea = new TextArea();
+        outputPane.setPadding(new Insets(15));
+        Label resultLabel = new Label("Result");
+        resultLabel.getStyleClass().add("label");
+        outputArea = new TextArea();  // Conserver TextArea
         outputArea.setEditable(false);
         outputArea.setWrapText(true);
+        outputArea.getStyleClass().add("output-area");
+        outputArea.setPrefHeight(315);
         VBox.setVgrow(outputArea, Priority.ALWAYS);
-        outputPane.getChildren().add(outputArea);
+        outputPane.getChildren().addAll(resultLabel, outputArea);
 
-        // Ajout des deux panneaux dans le SplitPane
         splitPane.getItems().addAll(historyPane, outputPane);
         return splitPane;
     }
 
-    /**
-     * Crée le pied de page de l'application.
-     * Le pied de page contient un champ de texte pour entrer des commandes, un bouton pour exécuter la commande et un bouton pour effacer la sortie.
-     *
-     * @return Un objet HBox représentant le pied de page.
-     */
-
-    private HBox createFooter() {
-        HBox footer = new HBox(10);
-        footer.setPadding(new Insets(10));
-        footer.setAlignment(Pos.CENTER_LEFT);
-        footer.setStyle("-fx-background-color: #3A3A3A;");
+    private VBox createFooter() {
+        VBox footer = new VBox(15);
+        footer.setPadding(new Insets(20));
+        footer.setAlignment(Pos.CENTER);
+        footer.getStyleClass().add("footer");
 
         commandField = new TextField();
         commandField.setPromptText("Enter system command...");
-        commandField.setPrefWidth(200); // Réduit encore pour faire de la place
-        HBox.setHgrow(commandField, Priority.ALWAYS);
+        commandField.setMaxWidth(500);
+        commandField.getStyleClass().add("command-field");
 
-        Button sendBtn = new Button("Execute");
-        sendBtn.getStyleClass().add("action-btn");
-        sendBtn.setOnAction(e -> executeCommand());
+        HBox buttonBox = new HBox(15);
+        buttonBox.setAlignment(Pos.CENTER);
 
-        Button uploadBtn = new Button("Upload File");
-        uploadBtn.getStyleClass().add("action-btn");
-        uploadBtn.setOnAction(e -> uploadFile());
+        Button sendBtn = new Button("Execute \uD83D\uDE80");  // Icône de fusée pour "Execute"
+        sendBtn.getStyleClass().add("execute-btn");
+        sendBtn.setTooltip(new Tooltip("Execute the entered command"));
+        sendBtn.setOnAction(e -> {
+            animateButton(sendBtn);
+            executeCommand();
+        });
 
-        Button downloadBtn = new Button("Download File");
-        downloadBtn.getStyleClass().add("action-btn");
-        downloadBtn.setOnAction(e -> downloadFile());
+        Button uploadBtn = new Button("Upload \uD83D\uDCE4");  // Icône d'upload
+        uploadBtn.getStyleClass().add("upload-btn");
+        uploadBtn.setTooltip(new Tooltip("Upload a file to the server"));
+        uploadBtn.setOnAction(e -> {
+            animateButton(uploadBtn);
+            uploadFile();
+        });
 
-        Button clearBtn = new Button("Clear");
-        clearBtn.getStyleClass().add("secondary-btn");
-        clearBtn.setOnAction(e -> outputArea.clear());
+        Button downloadBtn = new Button("Download \uD83D\uDCE5");  // Icône de download
+        downloadBtn.getStyleClass().add("download-btn");
+        downloadBtn.setTooltip(new Tooltip("Download a file from the server"));
+        downloadBtn.setOnAction(e -> {
+            animateButton(downloadBtn);
+            downloadFile();
+        });
 
-        footer.getChildren().addAll(commandField, sendBtn, uploadBtn, downloadBtn, clearBtn);
+        Button clearBtn = new Button("Clear \uD83D\uDDD1️");  // Icône de poubelle pour "Clear"
+        clearBtn.getStyleClass().add("clear-btn");
+        clearBtn.setTooltip(new Tooltip("Clear the output area"));
+        clearBtn.setOnAction(e -> {
+            animateButton(clearBtn);
+            outputArea.clear();
+        });
+
+        buttonBox.getChildren().addAll(sendBtn, uploadBtn, downloadBtn, clearBtn);
+        footer.getChildren().addAll(commandField, buttonBox);
         return footer;
     }
 
+    private void animateButton(ButtonBase btn) {
+        ScaleTransition scale = new ScaleTransition(Duration.millis(200), btn);
+        scale.setToX(1.1);
+        scale.setToY(1.1);
+        scale.setCycleCount(2);
+        scale.setAutoReverse(true);
+        scale.play();
+    }
 
-
-    /**
-     * Gère l'action de connexion/déconnexion du serveur.
-     *
-     * @param btn Le bouton "Connecter/Déconnecter" qui a été cliqué.
-     */
-    private void toggleConnection(ToggleButton btn) {
+    private void toggleConnection(ToggleButton btn, Circle statusIndicator) {
         if (btn.isSelected()) {
             try {
                 System.out.println("[ClientGUI] Tentative de connexion à " + serverIP + ":5001");
                 client = new Client(serverIP, 5001);
-                // Authentification avec le login et mot de passe entrés
                 String login = loginField.getText().trim();
-                String password = passwordField.getText().trim();
+                String password = isPasswordVisible ? passwordTextField.getText().trim() : passwordField.getText().trim();
                 if (client.authenticate(login, password)) {
                     isConnected = true;
-                    btn.setText("Disconnect");
+                    btn.setText("Déconnecter");
+                    btn.getStyleClass().remove("connect-btn");
+                    btn.getStyleClass().add("disconnect-btn");
                     outputArea.appendText("✅ Connecté au serveur\n");
+                    statusIndicator.setFill(Color.GREEN);
                 } else {
                     client.disconnect();
                     showErrorDialog("Erreur d'authentification", "Login ou mot de passe incorrect.");
                     btn.setSelected(false);
+                    statusIndicator.setFill(Color.RED);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 showErrorDialog("Erreur de connexion", e.getMessage());
                 btn.setSelected(false);
+                statusIndicator.setFill(Color.RED);
             }
         } else {
             if (client != null) {
                 client.disconnect();
             }
             isConnected = false;
-            btn.setText("Connect");
+            btn.setText("Connecter");
+            btn.getStyleClass().remove("disconnect-btn");
+            btn.getStyleClass().add("connect-btn");
             outputArea.appendText("❌ Déconnecté du serveur\n");
+            statusIndicator.setFill(Color.RED);
         }
     }
 
-    /**
-     * Exécute la commande entrée par l'utilisateur.
-     * Envoie la commande au serveur et affiche la réponse dans la zone de sortie.
-     */
     private void executeCommand() {
         if (!isConnected) {
             showErrorDialog("Erreur", "Pas connecté au serveur !");
@@ -223,7 +278,7 @@ public class ClientGUI extends Application {
             System.out.println("[ClientGUI] Envoi de la commande : " + command);
             String response = client.sendCommand(command);
             historyList.getItems().add(command);
-            outputArea.appendText("$ " + command + "\n" + response + "\n\n");
+            outputArea.appendText("**$ " + command + "**\n" + response + "\n\n");
             commandField.clear();
         } catch (Exception e) {
             showErrorDialog("Erreur d'exécution", e.getMessage());
@@ -235,7 +290,6 @@ public class ClientGUI extends Application {
             showErrorDialog("Erreur", "Pas connecté au serveur !");
             return;
         }
-
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Choisir un fichier à envoyer");
         File file = fileChooser.showOpenDialog(null);
@@ -249,14 +303,11 @@ public class ClientGUI extends Application {
         }
     }
 
-
     private void downloadFile() {
         if (!isConnected) {
             showErrorDialog("Erreur", "Pas connecté au serveur !");
             return;
         }
-
-        // Demande le nom du fichier à télécharger
         TextInputDialog dialog = new TextInputDialog();
         dialog.setTitle("Télécharger un fichier");
         dialog.setHeaderText("Entrez le nom du fichier à télécharger");
@@ -269,13 +320,10 @@ public class ClientGUI extends Application {
                 showErrorDialog("Erreur", "Le nom du fichier ne peut pas être vide !");
                 return;
             }
-
-            // Demande où sauvegarder le fichier
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Choisir où sauvegarder le fichier");
             fileChooser.setInitialFileName(fileName);
             File saveFile = fileChooser.showSaveDialog(null);
-
             if (saveFile != null) {
                 try {
                     String response = client.downloadFile(fileName, saveFile.getAbsolutePath());
@@ -287,12 +335,6 @@ public class ClientGUI extends Application {
         }
     }
 
-    /**
-     * Affiche une boîte de dialogue d'erreur.
-     *
-     * @param title   Le titre de la boîte de dialogue.
-     * @param message Le message d'erreur à afficher.
-     */
     private void showErrorDialog(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
@@ -301,11 +343,6 @@ public class ClientGUI extends Application {
         alert.showAndWait();
     }
 
-    /**
-     * Méthode principale pour lancer l'application.
-     *
-     * @param args Les arguments de la ligne de commande.
-     */
     public static void main(String[] args) {
         launch(args);
     }

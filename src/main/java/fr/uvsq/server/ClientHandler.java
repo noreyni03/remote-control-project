@@ -31,6 +31,7 @@ public class ClientHandler implements Runnable {
     private final CommandProcessor processor = new CommandProcessor();
     private final AuthManager authManager = new AuthManager(); // Ajout de l'AuthManager
     private final Consumer<String> logCallback;
+    private final String clientId;
 
     /**
      * Constructeur de `ClientHandler`.
@@ -42,6 +43,7 @@ public class ClientHandler implements Runnable {
     public ClientHandler(Socket socket, Consumer<String> logCallback) {
         this.clientSocket = socket;
         this.logCallback = logCallback;
+        this.clientId = socket.getInetAddress() + ":" + socket.getPort();
     }
 
     /**
@@ -62,11 +64,12 @@ public class ClientHandler implements Runnable {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
              PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
 
-            String clientId = clientSocket.getInetAddress() + ":" + clientSocket.getPort();
+            logger.info("Handling client: {}", clientId);
             logCallback.accept("📩 Handling client: " + clientId);
 
             String authSignal = in.readLine();
             if (!"AUTH".equals(authSignal)) {
+                logger.warn("Client {} did not send AUTH", clientId);
                 logCallback.accept("⚠️ Client " + clientId + " n'a pas envoyé AUTH.");
                 out.println("ERROR: Authentification requise.");
                 return;
@@ -75,9 +78,11 @@ public class ClientHandler implements Runnable {
             String login = in.readLine();
             String password = in.readLine();
             if (authManager.authenticate(login, password)) {
+                logger.info("Client {} authenticated successfully", clientId);
                 logCallback.accept("✅ Client " + clientId + " authentifié avec succès.");
                 out.println("OK");
             } else {
+                logger.warn("Authentication failed for client {}", clientId);
                 logCallback.accept("❌ Échec de l'authentification pour " + clientId);
                 out.println("ERROR: Identifiants incorrects.");
                 return;
@@ -85,13 +90,14 @@ public class ClientHandler implements Runnable {
 
             String command;
             while ((command = in.readLine()) != null) {
+                logger.info("Received from {}: {}", clientId, command);
                 logCallback.accept("Received command: " + command);
 
                 if ("UPLOAD".equals(command)) {
                     String fileName = in.readLine();
                     long fileSize = Long.parseLong(in.readLine());
                     String savePath = "server_files/" + fileName;
-                    Files.createDirectories(Paths.get("server_files")); // Crée le dossier si inexistant
+                    Files.createDirectories(Paths.get("server_files"));
                     try (FileOutputStream fos = new FileOutputStream(savePath)) {
                         byte[] buffer = new byte[4096];
                         long bytesReceived = 0;
@@ -104,6 +110,7 @@ public class ClientHandler implements Runnable {
                         fos.flush();
                     }
                     out.println("OK");
+                    logger.info("File received from {}: {}", clientId, fileName);
                     logCallback.accept("📤 Fichier reçu : " + fileName);
                 } else if ("DOWNLOAD".equals(command)) {
                     String fileName = in.readLine();
@@ -122,6 +129,7 @@ public class ClientHandler implements Runnable {
                         out.println(-1);
                         out.println("Fichier non trouvé : " + fileName);
                     }
+                    logger.info("File requested by {}: {}", clientId, fileName);
                     logCallback.accept("📥 Fichier demandé : " + fileName);
                 } else {
                     String response = processor.executeCommand(command);
@@ -130,8 +138,10 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (Exception e) {
+            logger.error("Client {} connection error: {}", clientId, e.getMessage(), e);
             logCallback.accept("⚠️ Client connection error: " + e.getMessage());
         } finally {
+            logger.info("Client {} disconnected", clientId);
             logCallback.accept("🔌 Client disconnected");
         }
     }

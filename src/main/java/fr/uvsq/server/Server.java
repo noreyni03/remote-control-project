@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Server {
     private volatile boolean running = true;
@@ -15,6 +17,7 @@ public class Server {
     private Consumer<String> disconnectCallback;
     private ExecutorService threadPool;
     private final CopyOnWriteArrayList<String> connectedClients = new CopyOnWriteArrayList<>();
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
 
     public void setLogCallback(Consumer<String> logCallback) {
         this.logCallback = logCallback;
@@ -44,11 +47,13 @@ public class Server {
             SSLServerSocketFactory factory = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             SSLServerSocket serverSocket = (SSLServerSocket) factory.createServerSocket(PORT);
 
+            logger.info("Server started on port {} with SSL", PORT);
             logCallback.accept("✅ Server listening on port " + PORT + " with SSL");
             while (running) {
                 Socket socket = serverSocket.accept();
                 String clientInfo = socket.getInetAddress() + ":" + socket.getPort();
                 connectedClients.add(clientInfo);
+                logger.info("New client connected: {}", clientInfo);
                 logCallback.accept("📩 Nouveau client connecté : " + clientInfo);
                 clientCallback.accept(clientInfo);
                 threadPool.execute(new ClientHandler(socket, logCallback) {
@@ -56,6 +61,7 @@ public class Server {
                     public void run() {
                         super.run();
                         connectedClients.remove(clientInfo);
+                        logger.info("Client disconnected: {}", clientInfo);
                         logCallback.accept("🔌 Client déconnecté : " + clientInfo);
                         if (disconnectCallback != null) {
                             disconnectCallback.accept(clientInfo);
@@ -65,6 +71,7 @@ public class Server {
             }
             serverSocket.close();
         } catch (Exception e) {
+            logger.error("Server error: {}", e.getMessage(), e);
             logCallback.accept("❌ Server error: " + e.getMessage());
         }
     }

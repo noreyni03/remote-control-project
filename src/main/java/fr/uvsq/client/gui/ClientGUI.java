@@ -17,7 +17,10 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import java.io.File;         // Nouvel import
+import java.io.IOException;  // Nouvel import
 
 /**
  * La classe `ClientGUI` représente l'interface graphique du client pour le système de contrôle à distance.
@@ -132,6 +135,7 @@ public class ClientGUI extends Application {
      *
      * @return Un objet HBox représentant le pied de page.
      */
+
     private HBox createFooter() {
         HBox footer = new HBox(10);
         footer.setPadding(new Insets(10));
@@ -140,20 +144,26 @@ public class ClientGUI extends Application {
 
         commandField = new TextField();
         commandField.setPromptText("Enter system command...");
-        commandField.setPrefWidth(400);
+        commandField.setPrefWidth(300);
         HBox.setHgrow(commandField, Priority.ALWAYS);
 
         Button sendBtn = new Button("Execute");
         sendBtn.getStyleClass().add("action-btn");
         sendBtn.setOnAction(e -> executeCommand());
 
+        Button uploadBtn = new Button("Upload File");
+        uploadBtn.getStyleClass().add("action-btn");
+        uploadBtn.setOnAction(e -> uploadFile());
+
         Button clearBtn = new Button("Clear");
         clearBtn.getStyleClass().add("secondary-btn");
         clearBtn.setOnAction(e -> outputArea.clear());
 
-        footer.getChildren().addAll(commandField, sendBtn, clearBtn);
+        footer.getChildren().addAll(commandField, sendBtn, uploadBtn, clearBtn);
         return footer;
     }
+
+
 
     /**
      * Gère l'action de connexion/déconnexion du serveur.
@@ -213,6 +223,28 @@ public class ClientGUI extends Application {
             showErrorDialog("Erreur d'exécution", e.getMessage());
         }
     }
+
+    private void uploadFile() {
+        if (!isConnected) {
+            showErrorDialog("Erreur", "Pas connecté au serveur !");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choisir un fichier à envoyer");
+        File file = fileChooser.showOpenDialog(null);
+        if (file != null) {
+            try {
+                client.uploadFile(file.getAbsolutePath());
+                outputArea.appendText("✅ Fichier envoyé : " + file.getName() + "\n");
+            } catch (IOException e) {
+                showErrorDialog("Erreur d’upload", e.getMessage());
+            }
+        }
+    }
+
+
+
 
     /**
      * Affiche une boîte de dialogue d'erreur.

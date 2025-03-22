@@ -9,6 +9,8 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * La classe `ClientHandler` gère la communication avec un client connecté au serveur.
@@ -54,51 +56,84 @@ public class ClientHandler implements Runnable {
      * - Gère les erreurs de communication.
      * - Gère la déconnexion du client.
      */
+
     @Override
     public void run() {
-        // Utilisation de try-with-resources pour s'assurer que les flux sont bien fermés à la fin.
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
              PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
 
             String clientId = clientSocket.getInetAddress() + ":" + clientSocket.getPort();
             logCallback.accept("📩 Handling client: " + clientId);
 
-            // Vérification de l'authentification
             String authSignal = in.readLine();
             if (!"AUTH".equals(authSignal)) {
                 logCallback.accept("⚠️ Client " + clientId + " n'a pas envoyé AUTH.");
                 out.println("ERROR: Authentification requise.");
-                return; // Ferme la connexion si AUTH n'est pas envoyé
+                return;
             }
 
             String login = in.readLine();
             String password = in.readLine();
             if (authManager.authenticate(login, password)) {
                 logCallback.accept("✅ Client " + clientId + " authentifié avec succès.");
-                out.println("OK"); // Envoie "OK" pour confirmer l'authentification
+                out.println("OK");
             } else {
                 logCallback.accept("❌ Échec de l'authentification pour " + clientId);
                 out.println("ERROR: Identifiants incorrects.");
-                return; // Ferme la connexion si les identifiants sont faux
+                return;
             }
 
             String command;
-            // Lecture des commandes envoyées par le client jusqu'à ce que la connexion soit coupée.
             while ((command = in.readLine()) != null) {
                 logCallback.accept("Received command: " + command);
-                // Exécution de la commande et récupération de la réponse.
-                String response = processor.executeCommand(command);
-                // Envoi de la réponse au client.
-                out.println(response);
-                // Envoi du marqueur de fin.
-                out.println(END_MARKER);
+
+                if ("UPLOAD".equals(command)) {
+                    String fileName = in.readLine();
+                    long fileSize = Long.parseLong(in.readLine());
+                    String savePath = "server_files/" + fileName;
+                    Files.createDirectories(Paths.get("server_files")); // Crée le dossier si inexistant
+                    try (FileOutputStream fos = new FileOutputStream(savePath)) {
+                        byte[] buffer = new byte[4096];
+                        long bytesReceived = 0;
+                        int bytesRead;
+                        InputStream inputStream = clientSocket.getInputStream();
+                        while (bytesReceived < fileSize && (bytesRead = inputStream.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                            bytesReceived += bytesRead;
+                        }
+                        fos.flush();
+                    }
+                    out.println("OK");
+                    logCallback.accept("📤 Fichier reçu : " + fileName);
+                } else if ("DOWNLOAD".equals(command)) {
+                    String fileName = in.readLine();
+                    File file = new File("server_files/" + fileName);
+                    if (file.exists()) {
+                        out.println(file.length());
+                        try (FileInputStream fis = new FileInputStream(file)) {
+                            byte[] buffer = new byte[4096];
+                            int bytesRead;
+                            while ((bytesRead = fis.read(buffer)) != -1) {
+                                clientSocket.getOutputStream().write(buffer, 0, bytesRead);
+                            }
+                            clientSocket.getOutputStream().flush();
+                        }
+                    } else {
+                        out.println(-1);
+                        out.println("Fichier non trouvé : " + fileName);
+                    }
+                    logCallback.accept("📥 Fichier demandé : " + fileName);
+                } else {
+                    String response = processor.executeCommand(command);
+                    out.println(response);
+                    out.println(END_MARKER);
+                }
             }
         } catch (Exception e) {
-            // Gestion des erreurs de communication.
             logCallback.accept("⚠️ Client connection error: " + e.getMessage());
         } finally {
-            // Gestion de la déconnexion du client.
             logCallback.accept("🔌 Client disconnected");
         }
     }
+
 }

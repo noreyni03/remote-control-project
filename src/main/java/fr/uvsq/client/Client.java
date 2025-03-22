@@ -3,6 +3,8 @@ package fr.uvsq.client;
 import java.io.*;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * La classe `Client` représente un client capable de se connecter à un serveur,
@@ -87,6 +89,71 @@ public class Client {
         System.out.println("[Client] Réponse reçue : " + response.toString().trim());
         return response.toString().trim();
     }
+
+
+    public void uploadFile(String filePath) throws IOException {
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Connexion au serveur perdue.");
+        }
+
+        File file = new File(filePath);
+        if (!file.exists()) {
+            throw new IOException("Le fichier n'existe pas : " + filePath);
+        }
+
+        // Envoie la commande UPLOAD et le nom du fichier
+        out.println("UPLOAD");
+        out.println(file.getName());
+        out.println(file.length()); // Envoie la taille du fichier en octets
+
+        // Envoie le contenu du fichier
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                socket.getOutputStream().write(buffer, 0, bytesRead);
+            }
+            socket.getOutputStream().flush();
+        }
+
+        // Lit la réponse du serveur
+        String response = in.readLine();
+        System.out.println("[Client] Réponse du serveur après upload : " + response);
+    }
+
+
+    public String downloadFile(String fileName, String savePath) throws IOException {
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Connexion au serveur perdue.");
+        }
+
+        // Envoie la commande DOWNLOAD et le nom du fichier
+        out.println("DOWNLOAD");
+        out.println(fileName);
+
+        // Lit la taille du fichier envoyée par le serveur
+        String sizeStr = in.readLine();
+        long fileSize = Long.parseLong(sizeStr);
+        if (fileSize == -1) {
+            String error = in.readLine();
+            return "Erreur : " + error;
+        }
+
+        // Reçoit le fichier et l’écrit à l’emplacement spécifié
+        try (FileOutputStream fos = new FileOutputStream(savePath)) {
+            byte[] buffer = new byte[4096];
+            long bytesReceived = 0;
+            int bytesRead;
+            while (bytesReceived < fileSize && (bytesRead = socket.getInputStream().read(buffer)) != -1) {
+                fos.write(buffer, 0, bytesRead);
+                bytesReceived += bytesRead;
+            }
+            fos.flush();
+        }
+
+        return "Fichier téléchargé avec succès à : " + savePath;
+    }
+
 
     /**
      * Déconnecte le client du serveur en fermant le socket.

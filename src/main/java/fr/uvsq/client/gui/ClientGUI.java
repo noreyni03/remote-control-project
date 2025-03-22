@@ -19,8 +19,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
-import java.io.File;         // Nouvel import
-import java.io.IOException;  // Nouvel import
+import java.io.File;
+import java.io.IOException;
+import javafx.scene.control.TextInputDialog;
+import java.util.Optional;
 
 /**
  * La classe `ClientGUI` représente l'interface graphique du client pour le système de contrôle à distance.
@@ -144,7 +146,7 @@ public class ClientGUI extends Application {
 
         commandField = new TextField();
         commandField.setPromptText("Enter system command...");
-        commandField.setPrefWidth(300);
+        commandField.setPrefWidth(200); // Réduit encore pour faire de la place
         HBox.setHgrow(commandField, Priority.ALWAYS);
 
         Button sendBtn = new Button("Execute");
@@ -155,11 +157,15 @@ public class ClientGUI extends Application {
         uploadBtn.getStyleClass().add("action-btn");
         uploadBtn.setOnAction(e -> uploadFile());
 
+        Button downloadBtn = new Button("Download File");
+        downloadBtn.getStyleClass().add("action-btn");
+        downloadBtn.setOnAction(e -> downloadFile());
+
         Button clearBtn = new Button("Clear");
         clearBtn.getStyleClass().add("secondary-btn");
         clearBtn.setOnAction(e -> outputArea.clear());
 
-        footer.getChildren().addAll(commandField, sendBtn, uploadBtn, clearBtn);
+        footer.getChildren().addAll(commandField, sendBtn, uploadBtn, downloadBtn, clearBtn);
         return footer;
     }
 
@@ -244,7 +250,42 @@ public class ClientGUI extends Application {
     }
 
 
+    private void downloadFile() {
+        if (!isConnected) {
+            showErrorDialog("Erreur", "Pas connecté au serveur !");
+            return;
+        }
 
+        // Demande le nom du fichier à télécharger
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Télécharger un fichier");
+        dialog.setHeaderText("Entrez le nom du fichier à télécharger");
+        dialog.setContentText("Nom du fichier :");
+        Optional<String> result = dialog.showAndWait();
+
+        if (result.isPresent()) {
+            String fileName = result.get().trim();
+            if (fileName.isEmpty()) {
+                showErrorDialog("Erreur", "Le nom du fichier ne peut pas être vide !");
+                return;
+            }
+
+            // Demande où sauvegarder le fichier
+            FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Choisir où sauvegarder le fichier");
+            fileChooser.setInitialFileName(fileName);
+            File saveFile = fileChooser.showSaveDialog(null);
+
+            if (saveFile != null) {
+                try {
+                    String response = client.downloadFile(fileName, saveFile.getAbsolutePath());
+                    outputArea.appendText("📥 " + response + "\n");
+                } catch (IOException e) {
+                    showErrorDialog("Erreur de téléchargement", e.getMessage());
+                }
+            }
+        }
+    }
 
     /**
      * Affiche une boîte de dialogue d'erreur.

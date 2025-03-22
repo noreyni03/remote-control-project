@@ -18,10 +18,6 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * La classe `ServerGUI` représente l'interface graphique du serveur pour le système de contrôle à distance.
- * Elle permet de démarrer et d'arrêter le serveur, d'afficher les logs du serveur et la liste des clients connectés.
- */
 public class ServerGUI extends Application {
     private TextArea logArea;
     private ListView<String> clientList;
@@ -30,18 +26,12 @@ public class ServerGUI extends Application {
     private boolean isRunning = false;
     private static final Logger logger = LoggerFactory.getLogger(ServerGUI.class);
 
-    /**
-     * Méthode principale pour démarrer l'application JavaFX.
-     *
-     * @param primaryStage La fenêtre principale de l'application.
-     */
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Remote Control Server - v1.0");
         BorderPane root = new BorderPane();
         root.getStylesheets().add(getClass().getResource("/styles/main.css").toExternalForm());
 
-        // Header
         HBox header = new HBox(10);
         header.setPadding(new Insets(15));
         Label title = new Label("Remote Control Server");
@@ -52,7 +42,6 @@ public class ServerGUI extends Application {
         header.getChildren().addAll(title, toggleBtn);
         root.setTop(header);
 
-        // Client List
         VBox clientBox = new VBox(10);
         clientBox.setPadding(new Insets(10));
         clientBox.setMinWidth(250);
@@ -60,7 +49,6 @@ public class ServerGUI extends Application {
         clientList.setPlaceholder(new Label("No clients connected"));
         clientBox.getChildren().addAll(new Label("Connected Clients"), clientList);
 
-        // Logs
         VBox logBox = new VBox(10);
         logBox.setPadding(new Insets(10));
         logArea = new TextArea();
@@ -73,47 +61,41 @@ public class ServerGUI extends Application {
         primaryStage.show();
     }
 
-    /**
-     * Gère l'action de démarrage ou d'arrêt du serveur.
-     *
-     * @param btn Le bouton "Start Server/Stop Server" qui a été cliqué.
-     */
     private void toggleServer(Button btn) {
         if (!isRunning) {
-            // Démarrage du serveur dans un thread séparé pour ne pas bloquer l'interface graphique.
             new Thread(() -> {
                 server = new Server();
-                // Définition d'une fonction de rappel pour l'affichage des logs.
                 server.setLogCallback(message ->
-                        // Mise à jour de l'interface graphique sur le thread principal.
                         Platform.runLater(() -> logArea.appendText(message + "\n"))
                 );
-                // Définition d'une fonction de rappel pour l'ajout de client à la liste.
                 server.setClientCallback(client ->
-                        // Mise à jour de l'interface graphique sur le thread principal.
-                        Platform.runLater(() -> clients.add(client))
+                        Platform.runLater(() -> {
+                            if (!clients.contains(client)) {
+                                clients.add(client);
+                            }
+                        })
+                );
+                server.setDisconnectCallback(client ->
+                        Platform.runLater(() -> {
+                            clients.remove(client);
+                        })
                 );
                 server.start();
             }).start();
             btn.setText("Stop Server");
             logArea.appendText("Server started on port 5001\n");
         } else {
-            // Arrêt du serveur.
             if (server != null) {
                 server.stop();
+                clients.clear();
+                clients.addAll(server.getConnectedClients());
             }
             btn.setText("Start Server");
             logArea.appendText("Server stopped\n");
-            clients.clear();
         }
         isRunning = !isRunning;
     }
 
-    /**
-     * Méthode principale pour lancer l'application.
-     *
-     * @param args Les arguments de la ligne de commande.
-     */
     public static void main(String[] args) {
         launch(args);
     }

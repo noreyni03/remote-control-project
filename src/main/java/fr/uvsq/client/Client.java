@@ -3,26 +3,38 @@ package fr.uvsq.client;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
 
-
+/**
+ * La classe `Client` représente un client pour le système de contrôle à distance.
+ * Elle permet de se connecter à un serveur, de s'authentifier, d'envoyer des commandes,
+ * de télécharger et d'uploader des fichiers, et de se déconnecter.
+ */
 public class Client {
-    private SSLSocket socket; // Changé de Socket à SSLSocket
-    private PrintWriter out;
-    private BufferedReader in;
-    private static final String END_MARKER = "###END###";
+    private SSLSocket socket; // Socket SSL pour la communication sécurisée avec le serveur
+    private PrintWriter out; // Flux de sortie pour envoyer des données au serveur
+    private BufferedReader in; // Flux d'entrée pour recevoir des données du serveur
+    private static final String END_MARKER = "###END###"; // Marqueur de fin de réponse du serveur
 
-
+    /**
+     * Constructeur de la classe `Client`.
+     * ablit une connexion sécurisée (SSL) avec le serveur spécifié.
+     *
+     * @param host L'adresse IP ou le nom d'hôte du serveur.
+     * @param port Le port sur lequel le serveur écoute.
+     * @throws IOException Si une erreur d'entrée/sortie se produit lors de la connexion.
+     */
     public Client(String host, int port) throws IOException {
         System.out.println("[Client] Tentative de connexion à " + host + ":" + port);
         try {
+            // Configuration du truststore pour la connexion SSL
             System.setProperty("javax.net.ssl.trustStore", "server_keystore.jks");
             System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
+            // Création d'une socket SSL
             SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             socket = (SSLSocket) factory.createSocket(host, port);
+            // Initialisation des flux d'entrée et de sortie
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             System.out.println("[Client] Connexion SSL réussie !");
@@ -33,6 +45,14 @@ public class Client {
     }
 
 
+    /**
+     * Authentifie le client auprès du serveur.
+     *
+     * @param login    Le nom d'utilisateur (login).
+     * @param password Le mot de passe.
+     * @return `true` si l'authentification réussit, `false` sinon.
+     * @throws IOException Si une erreur d'entrée/sortie se produit ou si la connexion est perdue.
+     */
     public boolean authenticate(String login, String password) throws IOException {
         if (socket == null || socket.isClosed()) {
             throw new IOException("Connexion au serveur perdue.");
@@ -47,10 +67,24 @@ public class Client {
         // Lit la réponse du serveur
         String response = in.readLine();
         System.out.println("[Client] Réponse d'authentification : " + response);
-        return "OK".equals(response); // Si le serveur répond "OK", c'est réussi
+        if ("OK".equals(response)) {
+            return true;
+        } else if ("ERROR".equals(response)) {
+            String error = in.readLine();
+            throw new IOException("Erreur d'authentification : " + error);
+        } else {
+            throw new IOException("Réponse inattendue du serveur : " + response);
+        }
     }
 
 
+    /**
+     * Envoie une commande au serveur et retourne sa réponse.
+     *
+     * @param command La commande à envoyer.
+     * @return La réponse du serveur.
+     * @throws IOException Si une erreur d'entrée/sortie se produit ou si la connexion est perdue.
+     */
     public String sendCommand(String command) throws IOException {
         if (socket == null || socket.isClosed()) {
             throw new IOException("Connexion au serveur perdue.");
@@ -66,6 +100,10 @@ public class Client {
             if (line.equals(END_MARKER)) {
                 break;
             }
+            if (line.equals("ERROR")) {
+                String error = in.readLine();
+                throw new IOException("Erreur du serveur : " + error);
+            }
             response.append(line).append("\n");
         }
         System.out.println("[Client] Réponse reçue : " + response.toString().trim());
@@ -73,6 +111,11 @@ public class Client {
     }
 
 
+    /**
+     * Envoie un fichier au serveur.
+     *
+     * @param filePath Le chemin du fichier hrows IOException Si une erreur d'entrée/sortie se produit, si le fichier n'existe pas, ou si la connexion est perdue.
+     */
     public void uploadFile(String filePath) throws IOException {
         if (socket == null || socket.isClosed()) {
             throw new IOException("Connexion au serveur perdue.");
@@ -101,9 +144,18 @@ public class Client {
         // Lit la réponse du serveur
         String response = in.readLine();
         System.out.println("[Client] Réponse du serveur après upload : " + response);
+        if ("ERROR".equals(response)) {
+            String error = in.readLine();
+            throw new IOException("Erreur du serveur : " + error);
+        }
     }
 
 
+    /**
+     * TvePath Le chemin où sauvegarder le fichier téléchargé.
+     * @return Un message indiquant le succès ou l'échec du téléchargement.
+     * @throws IOException Si une erreur d'entrée/sortie se produit ou si la connexion est perdue.
+     */
     public String downloadFile(String fileName, String savePath) throws IOException {
         if (socket == null || socket.isClosed()) {
             throw new IOException("Connexion au serveur perdue.");
@@ -118,7 +170,7 @@ public class Client {
         long fileSize = Long.parseLong(sizeStr);
         if (fileSize == -1) {
             String error = in.readLine();
-            return "Erreur : " + error;
+            throw new IOException("Erreur du serveur : " + error);
         }
 
         // Reçoit le fichier et l’écrit à l’emplacement spécifié

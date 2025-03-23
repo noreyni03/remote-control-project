@@ -18,9 +18,11 @@ import java.nio.file.Paths;
  * permettant ainsi de gérer plusieurs clients simultanément.
  *
  * Chaque instance de `ClientHandler` est responsable de :
+ * - L'authentification du client.
  * - La réception des commandes envoyées par un client.
  * - L'exécution de ces commandes via un `CommandProcessor`.
  * - L'envoi des résultats de l'exécution au client.
+ * - La gestion des transferts de fichiers (upload et download).
  * - La gestion des erreurs de communication et la déconnexion du client.
  */
 public class ClientHandler implements Runnable {
@@ -29,7 +31,7 @@ public class ClientHandler implements Runnable {
 
     private final Socket clientSocket;
     private final CommandProcessor processor = new CommandProcessor();
-    private final AuthManager authManager = new AuthManager(); // Ajout de l'AuthManager
+    private final AuthManager authManager = new AuthManager();
     private final Consumer<String> logCallback;
     private final String clientId;
 
@@ -51,22 +53,24 @@ public class ClientHandler implements Runnable {
      * Gère la communication avec le client :
      * - Établit les flux d'entrée/sortie pour la communication.
      * - Récupère l'identifiant du client (adresse IP et port).
-     * - Vérifie l'authentification avant de traiter les commandes.
+     * - Effectue l'authentification du client.
      * - Boucle pour lire les commandes envoyées par le client.
      * - Exécute les commandes via le `CommandProcessor`.
-     * - Envoie la réponse au client, suivie du marqueur de fin `END_MARKER`.
+     * - Gère les demandes d'upload de fichiers.
+     * - Gère les demandes de download de fichiers.
+     * - Envoie la réponse au client, suivie du marqueur de fin `END_MARKER` pour les commandes.
      * - Gère les erreurs de communication.
      * - Gère la déconnexion du client.
      */
-
     @Override
     public void run() {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8));
              PrintWriter out = new PrintWriter(new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8), true)) {
 
             logger.info("Handling client: {}", clientId);
-            logCallback.accept("📩 Handling client: " + clientId);
+            logCallback.accept(" Handling client: " + clientId);
 
+            // Phase d'authentification
             String authSignal = in.readLine();
             if (!"AUTH".equals(authSignal)) {
                 logger.warn("Client {} did not send AUTH", clientId);
@@ -83,21 +87,23 @@ public class ClientHandler implements Runnable {
                 out.println("OK");
             } else {
                 logger.warn("Authentication failed for client {}", clientId);
-                logCallback.accept("❌ Échec de l'authentification pour " + clientId);
+                logCallback.accept(" Échec de l'authentification pour " + clientId);
                 out.println("ERROR: Identifiants incorrects.");
                 return;
             }
 
+            // Boucle de traitement des commandes
             String command;
             while ((command = in.readLine()) != null) {
                 logger.info("Received from {}: {}", clientId, command);
                 logCallback.accept("Received command: " + command);
 
+                // Gestion de l'upload de fichier
                 if ("UPLOAD".equals(command)) {
                     String fileName = in.readLine();
                     long fileSize = Long.parseLong(in.readLine());
                     String savePath = "server_files/" + fileName;
-                    Files.createDirectories(Paths.get("server_files"));
+                    Files.createDirectories(Paths.get("server_files")); // Création du dossier si inexistant
                     try (FileOutputStream fos = new FileOutputStream(savePath)) {
                         byte[] buffer = new byte[4096];
                         long bytesReceived = 0;
@@ -111,7 +117,8 @@ public class ClientHandler implements Runnable {
                     }
                     out.println("OK");
                     logger.info("File received from {}: {}", clientId, fileName);
-                    logCallback.accept("📤 Fichier reçu : " + fileName);
+                    logCallback.accept("📤 Fichier reu : " + fileName);
+                    // Gestion du download de fichier
                 } else if ("DOWNLOAD".equals(command)) {
                     String fileName = in.readLine();
                     File file = new File("server_files/" + fileName);
@@ -131,6 +138,7 @@ public class ClientHandler implements Runnable {
                     }
                     logger.info("File requested by {}: {}", clientId, fileName);
                     logCallback.accept("📥 Fichier demandé : " + fileName);
+                    // Gestion des commandes système
                 } else {
                     String response = processor.executeCommand(command);
                     out.println(response);
@@ -145,5 +153,4 @@ public class ClientHandler implements Runnable {
             logCallback.accept("🔌 Client disconnected");
         }
     }
-
 }
